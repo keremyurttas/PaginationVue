@@ -126,7 +126,7 @@ const displayPages = function () {
           ...Array.from(
             { length: props.maxPageCount - 2 },
             (_, index) => totalPage - index
-          ).sort(),
+          ).sort((a, b) => a - b),
         ]
       : [
           1,
