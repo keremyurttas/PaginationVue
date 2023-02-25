@@ -1,5 +1,16 @@
 <template>
-  <section class="container">
+  <section
+    :style="{
+      '--pagination-item-width': width,
+      '--pagination-item-height': height,
+      '--color-active': colorActive,
+      '--color-primary': colorPrimary,
+      '--bg-button-disabled': bgButtonDisabled,
+      '--bg-primary': bgPrimary,
+      '--page-color-primary': pageColorPrimary,
+    }"
+    class="container"
+  >
     <button
       :disabled="activeIndex === 0 ? true : false"
       :class="{ 'button-disabled': activeIndex === 0 }"
@@ -14,7 +25,7 @@
         page == '...' ? 'dots' : 'page',
         { 'page-active': activeIndex + 1 === page },
       ]"
-      class="page-disabled"
+      class="page"
       @click="page === '...' ? undefined : (activeIndex = page - 1)"
       :key="page"
       v-for="page in displayPages()"
@@ -33,33 +44,98 @@
   </section>
 </template>
 <script setup>
-import { ref } from "vue";
+import { ref, defineProps } from "vue";
+const props = defineProps({
+  itemCount: {
+    type: Number,
+    required: true,
+    default: 60,
+  },
+  itemCountPerPage: {
+    type: Number,
+    required: false,
+    default: 5,
+  },
+  width: {
+    type: String,
+    required: false,
+    default: "2rem",
+  },
+  height: {
+    type: String,
+    required: false,
+    default: "2rem",
+  },
+  colorActive: {
+    type: String,
+    required: false,
+    default: "#4200ff",
+  },
+  bgPrimary: {
+    type: String,
+    required: false,
+    default: "white",
+  },
+  pageColorPrimary: {
+    type: String,
+    required: false,
+    default: "black",
+  },
+  bgButtonDisabled: {
+    type: String,
+    required: false,
+    default: "#919eab",
+  },
+  colorPrimary: {
+    type: String,
+    required: false,
+    default: "#c4cdd5",
+  },
+  maxPageCount: {
+    type: Number,
+    required: false,
+    default: 7,
+    validator: (value) => {
+      if (value < 6) {
+        throw new Error("maxPageCount prop's value must be greater than 5");
+      } else {
+        return value;
+      }
+    },
+  },
+});
+
 const activeIndex = ref(0);
-const itemCount = 60;
-const itemCountPerPage = 5;
-const totalPage = Math.round(Math.floor(itemCount / itemCountPerPage));
-const maxPageCount = 7;
+let totalPage = Math.round(Math.ceil(props.itemCount / props.itemCountPerPage));
 
 const displayPages = function () {
-  return totalPage > maxPageCount
+  return totalPage > props.maxPageCount
     ? activeIndex.value < 4
-      ? [1, 2, 3, 4, 5, "...", totalPage]
+      ? [
+          ...Array.from(
+            { length: props.maxPageCount - 2 },
+            (_, index) => index + 1
+          ),
+          "...",
+          totalPage,
+        ]
       : activeIndex.value > totalPage - 5
       ? [
           1,
           "...",
-          totalPage - 4,
-          totalPage - 3,
-          totalPage - 2,
-          totalPage - 1,
-          totalPage,
+          ...Array.from(
+            { length: props.maxPageCount - 2 },
+            (_, index) => totalPage - index
+          ).sort(),
         ]
       : [
           1,
           "...",
           activeIndex.value,
-          activeIndex.value + 1,
-          activeIndex.value + 2,
+          ...Array.from(
+            { length: props.maxPageCount - 5 },
+            (_, index) => activeIndex.value + index + 1
+          ),
           "...",
           totalPage,
         ]
@@ -68,15 +144,14 @@ const displayPages = function () {
 </script>
 <style>
 :root {
-  --color-page-active: #4200ff;
-  --color-primary: #c4cdd5;
+  /* --color-active: #4200ff; */
+  /* --color-primary: #c4cdd5; */
   --bg: #dfe3e8;
-  --bg-primary: white;
-  --bg-button-disabled: #919eab;
+  /* --bg-primary: white;
+  --bg-button-disabled: #919eab; */
 }
 .container {
   padding: 10rem;
-
   width: 100%;
   background-color: var(--bg);
   display: flex;
@@ -88,8 +163,8 @@ button {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-width: 2rem;
-  min-height: 2rem;
+  min-width: var(--pagination-item-width, 2rem);
+  min-height: var(--pagination-item-height, 2rem);
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -101,8 +176,8 @@ button {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-width: 2rem;
-  min-height: 2rem;
+  min-width: var(--pagination-item-width, 2rem);
+  min-height: var(--pagination-item-height, 2rem);
   border: none;
   border-radius: 4px;
 }
@@ -123,14 +198,14 @@ button:not(.button-disabled):hover {
 .page {
   font-weight: bold;
   background: var(--bg-primary);
-}
-.page-active {
-  border-color: var(--color-page-active);
-  color: var(--color-page-active);
-  border: solid 1px;
-}
-.page-disabled {
+  color: var(--page-color-primary);
   background-color: var(--bg-primary);
+}
+
+.page-active {
+  border-color: var(--color-active);
+  color: var(--color-active);
+  border: solid 1px;
 }
 img {
   box-shadow: none;
