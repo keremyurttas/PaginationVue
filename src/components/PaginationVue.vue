@@ -177,6 +177,16 @@ const displayPages = computed(() => {
 });
 </script>
 <style scoped>
+section,
+button {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 100%;
+  font: inherit;
+  vertical-align: baseline;
+}
+
 .container {
   padding: 10rem;
   width: 100%;
