@@ -9,42 +9,42 @@
       '--bg-primary': bgPrimary,
       '--page-color-primary': pageColorPrimary,
     }"
-    class="container"
+    class=""
   >
-    <button
-      :disabled="activeIndex === 0 ? true : false"
-      :class="{ 'button-disabled': activeIndex === 0 }"
-      @click="activeIndex--"
-      class="button-active"
-    >
-      &lt;
-    </button>
+    <div class="container">
+      <button
+        :disabled="activeIndex === 0 ? true : false"
+        @click="changePage('-')"
+        class="button-active"
+      >
+        &lt;
+      </button>
 
-    <component
-      :class="[
-        page == '...' ? 'dots' : 'page',
-        { 'page-active': activeIndex + 1 === page },
-      ]"
-      class="page"
-      @click="page === '...' ? undefined : (activeIndex = page - 1)"
-      :key="page"
-      v-for="page in displayPages()"
-      :is="page == '...' ? 'div' : 'button'"
-      >{{ page }}</component
-    >
+      <component
+        v-for="page in displayPages"
+        :class="[
+          page == '...' ? 'dots' : 'page',
+          { 'page-active': activeIndex + 1 === page },
+        ]"
+        class="page"
+        @click="page === '...' ? undefined : changePage(page - 1)"
+        :key="page"
+        :is="page == '...' ? 'div' : 'button'"
+        >{{ page }}</component
+      >
 
-    <button
-      :disabled="activeIndex + 1 === totalPage ? true : false"
-      :class="{ 'button-disabled': activeIndex + 1 === totalPage }"
-      @click="activeIndex++"
-      class="button-active"
-    >
-      &gt;
-    </button>
+      <button
+        :disabled="activeIndex + 1 == totalPage ? true : false"
+        @click="changePage('+')"
+        class="button-active"
+      >
+        &gt;
+      </button>
+    </div>
   </section>
 </template>
 <script setup>
-import { ref, defineProps } from "vue";
+import { ref, watch, defineProps, computed, defineEmits } from "vue";
 const props = defineProps({
   itemCount: {
     type: Number,
@@ -104,67 +104,101 @@ const props = defineProps({
     },
   },
 });
+const emit = defineEmits(["change"]);
 
 const activeIndex = ref(0);
-let totalPage = Math.round(Math.ceil(props.itemCount / props.itemCountPerPage));
 
-const displayPages = function () {
-  return totalPage > props.maxPageCount
-    ? activeIndex.value < 4
+const changePage = function (value) {
+  typeof value === "number"
+    ? (activeIndex.value = value)
+    : value == "-"
+    ? activeIndex.value--
+    : activeIndex.value++;
+  emit("change", activeIndex.value);
+};
+let totalPage = ref(
+  Math.round(Math.ceil(props.itemCount / props.itemCountPerPage))
+);
+watch(props, () => {
+  totalPage.value = Math.round(
+    Math.ceil(props.itemCount / props.itemCountPerPage)
+  );
+});
+
+const displayPages = computed(() => {
+  return totalPage.value > props.maxPageCount
+    ? activeIndex.value < props.maxPageCount / 2
       ? [
           ...Array.from(
             { length: props.maxPageCount - 2 },
             (_, index) => index + 1
           ),
           "...",
-          totalPage,
+          totalPage.value,
         ]
-      : activeIndex.value > totalPage - 5
+      : activeIndex.value + 1 > totalPage.value - props.maxPageCount / 2
       ? [
           1,
           "...",
           ...Array.from(
             { length: props.maxPageCount - 2 },
-            (_, index) => totalPage - index
+            (_, index) => totalPage.value - index
           ).sort((a, b) => a - b),
+        ]
+      : props.maxPageCount % 2 === 0
+      ? [
+          1,
+          "...",
+          ...Array.from(
+            { length: props.maxPageCount - 4 },
+            (_, index) =>
+              activeIndex.value +
+              index -
+              Math.ceil((props.maxPageCount - 7) / 2) +
+              1
+          ),
+          "...",
+          totalPage.value,
         ]
       : [
           1,
           "...",
-          activeIndex.value,
           ...Array.from(
-            { length: props.maxPageCount - 5 },
-            (_, index) => activeIndex.value + index + 1
+            { length: props.maxPageCount - 4 },
+            (_, index) =>
+              activeIndex.value +
+              index -
+              Math.ceil((props.maxPageCount - 7) / 2)
           ),
           "...",
-          totalPage,
+          totalPage.value,
         ]
-    : totalPage;
-};
+    : totalPage.value;
+});
 </script>
-<style>
-:root {
-  /* --color-active: #4200ff; */
-  /* --color-primary: #c4cdd5; */
-  --bg: #dfe3e8;
-  /* --bg-primary: white;
-  --bg-button-disabled: #919eab; */
-}
+<style scoped>
 .container {
   padding: 10rem;
   width: 100%;
-  background-color: var(--bg);
+  background-color: white;
   display: flex;
   gap: 8px;
   align-items: center;
   justify-content: center;
 }
+@media only screen and (max-width: 600px) {
+  .container {
+    padding: 0;
+    justify-content: space-between;
+    gap: 0;
+  }
+}
 button {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-width: var(--pagination-item-width, 2rem);
-  min-height: var(--pagination-item-height, 2rem);
+  min-width: var(--pagination-item-width);
+  min-height: var(--pagination-item-height);
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -176,8 +210,8 @@ button {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-width: var(--pagination-item-width, 2rem);
-  min-height: var(--pagination-item-height, 2rem);
+  min-width: var(--pagination-item-width);
+  min-height: var(--pagination-item-height);
   border: none;
   border-radius: 4px;
 }
@@ -189,7 +223,7 @@ button:not(.button-disabled):hover {
   color: var(--color-primary);
   font-size: x-large;
 }
-.button-disabled {
+button:disabled {
   background: var(--bg-button-disabled);
   color: var(--color-primary);
   font-size: x-large;

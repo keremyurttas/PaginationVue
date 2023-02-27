@@ -1,5 +1,12 @@
 <template>
-  <pagination-vue> </pagination-vue>
+  <pagination-vue
+    width="40px"
+    :maxPageCount="9"
+    :itemCountPerPage="2"
+    :itemCount="30"
+    @change="test($event)"
+  >
+  </pagination-vue>
 </template>
 
 <script>
@@ -9,6 +16,11 @@ export default {
   name: "App",
   components: {
     PaginationVue,
+  },
+  methods: {
+    test(page) {
+      console.log(page + 1);
+    },
   },
 };
 </script>
